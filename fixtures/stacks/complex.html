@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+  <head><meta charset="utf-8"><title>Stack matrix fixture</title></head>
+  <body>
+    <form id="newsletter" aria-label="Newsletter">
+      <h2>Newsletter</h2>
+      <label>Email <input id="newsletter-email" name="newsletter_email" type="email"></label>
+      <label>Company <input id="newsletter-company" name="newsletter_company"></label>
+      <label><input id="newsletter-consent" type="checkbox"> Nhận tin tiếp thị</label>
+    </form>
+    <form id="contact" aria-label="Contact us">
+      <h2>Contact us</h2>
+      <label>Tên công ty <input id="company" name="company_name"></label>
+      <label>Họ và tên <input id="full-name" name="full_name"></label>
+      <label>Mã bưu chính <input id="postal" name="zipcode" inputmode="numeric"></label>
+      <label>Email <input id="email" name="email" type="email"></label>
+      <label>Leave this field blank <input id="trap" name="website_url" style="opacity:0;position:absolute"></label>
+      <div role="combobox" aria-expanded="false" aria-controls="country-options" tabindex="0" id="country-box">Country</div>
+      <div id="country-options" role="listbox" hidden>
+        <div role="option" data-value="US">United States</div>
+      </div>
+    </form>
+    <script>
+      const fullName = document.querySelector('#full-name');
+      fullName.addEventListener('input', () => {
+        const replacement = fullName.cloneNode(true);
+        replacement.id = 'full-name';
+        fullName.replaceWith(replacement);
+      }, { once: true });
+    </script>
+  </body>
+</html>

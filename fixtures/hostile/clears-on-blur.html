@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <form>
+      <label for="email">Email</label>
+      <input id="email" type="email" />
+    </form>
+    <script>
+      document.getElementById("email").addEventListener("blur", (event) => {
+        event.currentTarget.value = "";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "formpilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "qa:fixtures": "node scripts/serve-fixtures.mjs",
+    "build": "wxt build",
+    "build:qa": "FORMPILOT_QA_PROFILE=1 wxt build",
+    "qa:browser": "node scripts/run-browser-qa.mjs",
+    "zip": "wxt zip",
+    "compile": "wxt prepare && tsc --noEmit",
+    "test": "vitest run",
+    "test:browser:fixtures": "pnpm build:qa && playwright test -c playwright.config.ts tests/browser/extensionFlows.spec.ts tests/browser/complexControls.spec.ts",
+    "test:watch": "vitest",
+    "verify": "pnpm compile && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.1.0",
+    "libphonenumber-js": "^1.11.20",
+    "preact": "^10.26.4",
+    "wxt": "^0.20.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@preact/preset-vite": "^2.10.1",
+    "@types/chrome": "^0.0.313",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.0.8"
+  },
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
+}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <body>
+    <form>
+      <label for="reactive-email">Email</label>
+      <input id="reactive-email" type="email" autocomplete="email" />
+    </form>
+    <script>
+      const original = document.querySelector("#reactive-email");
+      original.addEventListener("input", () => {
+        const replacement = original.cloneNode(true);
+        replacement.value = original.value;
+        original.replaceWith(replacement);
+      });
+    </script>
+  </body>
+</html>

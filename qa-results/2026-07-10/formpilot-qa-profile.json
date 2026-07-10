@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "identity": {
+    "givenName": "Avery",
+    "familyName": "Example",
+    "middleName": "Rowan",
+    "dateOfBirth": "1990-04-15",
+    "gender": "Non-binary",
+    "nationality": "US",
+    "placeOfBirth": "Example City"
+  },
+  "contact": {
+    "emails": [
+      { "label": "primary", "value": "avery.example@example.com", "primary": true }
+    ],
+    "phones": [
+      { "label": "mobile", "countryCode": "+1", "number": "2025550147", "primary": true }
+    ]
+  },
+  "addresses": [
+    {
+      "label": "home",
+      "street": "123 Example Street",
+      "streetNumber": "123",
+      "line2": "Unit QA",
+      "city": "Testville",
+      "region": "CA",
+      "postalCode": "94105",
+      "country": "US",
+      "primary": true
+    }
+  ],
+  "documents": {
+    "passportNumber": "TEST-PASSPORT-001",
+    "passportExpiry": "2035-04-15",
+    "passportIssuingCountry": "US",
+    "nationalId": "TEST-NATIONAL-ID-001",
+    "taxId": "TEST-TAX-ID-001",
+    "driversLicense": "TEST-DL-001"
+  },
+  "work": {
+    "company": "Example Labs",
+    "jobTitle": "QA Analyst",
+    "website": "https://example.com"
+  },
+  "custom": [
+    { "key": "department", "label": "Department", "value": "Quality Assurance" }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-07-10",
+  "method": "Manually reviewed from the 100-site static-DOM report. Expected classifications are independent of FormPilot mapping output.",
+  "classes": [
+    "actionable",
+    "protected-prefilled",
+    "sensitive",
+    "manual-choice",
+    "unsupported",
+    "excluded"
+  ],
+  "cases": [
+    {
+      "source": "https://www.2degrees.nz/business/contact-us",
+      "label": "Leave this field blank (optional)",
+      "classification": "excluded",
+      "reason": "honeypot"
+    },
+    {
+      "source": "https://www.kone.co.uk/about-us/contact-us/",
+      "label": "I would like to receive relevant content from KONE including marketing messages via email",
+      "classification": "manual-choice",
+      "reason": "marketing-consent"
+    },
+    {
+      "source": "https://www.yara.cl/contacto/",
+      "label": "Acepto que mis Datos Personales sean tratados conforme a la Política de Privacidad",
+      "classification": "manual-choice",
+      "reason": "privacy-consent"
+    },
+    {
+      "source": "https://kokusai-commerce.co.jp/inquiry/",
+      "label": "COMPANY NAME",
+      "classification": "actionable",
+      "profileKey": "work.company"
+    },
+    {
+      "source": "https://mtcau.com/contact",
+      "label": "Company name",
+      "classification": "actionable",
+      "profileKey": "work.company"
+    },
+    {
+      "source": "https://trada.id/form",
+      "label": "Nama Perusahaan",
+      "classification": "actionable",
+      "profileKey": "work.company"
+    },
+    {
+      "source": "https://www.midas-industries.eu/contact/",
+      "label": "Country",
+      "classification": "actionable",
+      "profileKey": "addresses[0].country"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "useDefineForClassFields": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["chrome", "vitest/globals"]
+  },
+  "include": [
+    "src",
+    "entrypoints",
+    "tests",
+    "playwright.config.ts",
+    "scripts/live-dom-qa.test.ts",
+    "wxt.config.ts",
+    "vitest.config.ts",
+    "vitest.live.config.ts"
+  ]
+}
