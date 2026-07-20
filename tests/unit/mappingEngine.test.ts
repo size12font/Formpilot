@@ -5,13 +5,13 @@ import type { FieldDescriptor, Profile } from "@/shared/types";
 const profile: Profile = {
   version: 1,
   identity: {
-    givenName: "Johnny",
-    familyName: "Quach",
+    givenName: "Avery",
+    familyName: "Example",
     dateOfBirth: "1990-07-09",
     nationality: "US"
   },
   contact: {
-    emails: [{ label: "primary", value: "johnny@example.com", primary: true }],
+    emails: [{ label: "primary", value: "avery@example.com", primary: true }],
     phones: [{ label: "mobile", countryCode: "+1", number: "4155551212", primary: true }]
   },
   addresses: [
@@ -80,8 +80,8 @@ describe("mapping engine", () => {
     });
 
     expect(plan.visionUsed).toBe(false);
-    expect(plan.entries.find((entry) => entry.fieldId === "first")?.value).toBe("Johnny");
-    expect(plan.entries.find((entry) => entry.fieldId === "last")?.value).toBe("Quach");
+    expect(plan.entries.find((entry) => entry.fieldId === "first")?.value).toBe("Avery");
+    expect(plan.entries.find((entry) => entry.fieldId === "last")?.value).toBe("Example");
     expect(plan.entries.find((entry) => entry.fieldId === "birth")?.value).toBe("09/07/1990");
     expect(plan.entries.find((entry) => entry.fieldId === "zip")?.value).toBe("94105");
     expect(plan.entries.find((entry) => entry.fieldId === "country")?.selectedOptionValue).toBe(

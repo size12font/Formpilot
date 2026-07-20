@@ -10,21 +10,21 @@ import type { Profile } from "@/shared/types";
 const profile: Profile = {
   version: 1,
   identity: {
-    givenName: "Johnny",
-    familyName: "Quach"
+    givenName: "Avery",
+    familyName: "Example"
   },
   contact: {
-    emails: [{ label: "primary", value: "size12font@gmail.com", primary: true }],
+    emails: [{ label: "primary", value: "avery.example@example.com", primary: true }],
     phones: [
-      { label: "mobile", countryCode: "+1", number: "6263668778", primary: true }
+      { label: "mobile", countryCode: "+1", number: "2025550147", primary: true }
     ]
   },
   addresses: [
     {
       label: "home",
-      street: "4919 Glickman",
-      city: "Temple City",
-      postalCode: "91780",
+      street: "123 Example Street",
+      city: "Testville",
+      postalCode: "94105",
       country: "US",
       primary: true
     }
@@ -72,13 +72,13 @@ describe("plain contact fixture", () => {
 
     await fillEntries(plan.entries, { simulateTyping: false });
 
-    expect((document.querySelector("#first") as HTMLInputElement).value).toBe("Johnny");
-    expect((document.querySelector("#last") as HTMLInputElement).value).toBe("Quach");
+    expect((document.querySelector("#first") as HTMLInputElement).value).toBe("Avery");
+    expect((document.querySelector("#last") as HTMLInputElement).value).toBe("Example");
     expect((document.querySelector("#email") as HTMLInputElement).value).toBe(
-      "size12font@gmail.com"
+      "avery.example@example.com"
     );
     expect((document.querySelector("#phone") as HTMLInputElement).value).toContain(
-      "626"
+      "202"
     );
     expect((document.querySelector("#country") as HTMLSelectElement).value).toBe("US");
     expect(verifyEntries(plan.entries).every((result) => result.status === "ok")).toBe(

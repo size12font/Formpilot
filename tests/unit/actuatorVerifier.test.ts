@@ -17,7 +17,7 @@ describe("actuator and verifier", () => {
       fieldId: "email",
       profileKey: "contact.emails[0].value",
       transform: "none",
-      value: "johnny@example.com",
+      value: "avery@example.com",
       confidence: 1,
       status: "ready"
     };
