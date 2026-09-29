@@ -14,5 +14,6 @@ export async function showPreviewOverlay(
 ): Promise<void> {
   const profile = await getProfile();
   const profileKeys = profile ? flattenProfile(profile).map((field) => field.key) : [];
-  mountOverlay({ plan, profileKeys, ...handlers });
+  const profileLabels = Object.fromEntries(profile ? flattenProfile(profile).map((field) => [field.key, field.label]) : []);
+  mountOverlay({ plan, profileKeys, profileLabels, ...handlers });
 }

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Cloud matching fixture</title>
+<style>body{font:16px system-ui;max-width:600px;margin:40px}label{display:block;margin:16px 0}input{display:block;padding:8px}</style></head>
+<body><h1>Contact details</h1>
+<form onsubmit="event.preventDefault();document.body.dataset.submitted='true'">
+  <label>First name<input id="first" autocomplete="given-name"></label>
+  <label>Surname<input id="surname"></label>
+  <label>Work email<input id="work" type="email"></label>
+  <h2>Billing</h2>
+  <label>ZIP / postcode<input id="billing" autocomplete="postal-code"></label>
+  <label>Company registration number<input id="registration"></label>
+  <label>Personal email<input id="prefilled" type="email" value="keep@example.test"></label>
+  <label>Password<input id="password" type="password"></label>
+  <button type="submit">Continue</button>
+</form></body></html>

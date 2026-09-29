@@ -107,3 +107,10 @@ button,
 .import input {
   display: none;
 }
+.cloud-settings { margin-bottom: 24px; }
+.cloud-settings p { max-width: 65ch; line-height: 1.5; }
+.cloud-settings label { margin-bottom: 12px; }
+.cloud-settings > label:first-child { display: flex; align-items: center; gap: 8px; }
+.cloud-settings p { margin: 8px 0 12px; }
+.cloud-settings input[type="checkbox"] { width: auto; margin-right: 8px; }
+.cloud-settings button { margin-right: 8px; }

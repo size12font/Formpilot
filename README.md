@@ -10,7 +10,9 @@ Chrome MV3 extension for preview-first local form filling.
 - DOM field extraction with labels, nearby text, open shadow roots, same-origin iframe traversal.
 - Sensitive-field skipping for payments, passwords, OTP, bank fields.
 - Deterministic transforms for dates, phone, country, select matching, length/pattern warnings.
-- Prompt API adapter isolated behind `promptClient`, with no cloud fallback.
+- Local Chrome Prompt API adapter isolated behind `promptClient`.
+- Optional cloud-assisted matching through an authenticated Jev broker, disabled by default.
+  Saved values stay local; the service selects from described candidate IDs.
 - Local heuristic mapper fallback for unsupported Prompt API environments.
 - Preview overlay, user corrections, signature cache, actuation, verification.
 - Fixture forms for plain, German, payment, hostile, ARIA, wizard, and legacy table layouts.
@@ -44,6 +46,8 @@ Keep the fixture server running while using Chrome Preview/Fill QA.
 
 ## Current verification
 
-`pnpm verify` passes: TypeScript compile, 14 unit tests, WXT production build.
+Run `pnpm verify` for type checking, unit/integration tests, and the production build.
+Run `pnpm test:browser:fixtures` for Chromium fixture tests with a synthetic QA profile.
 
-Generated extension bundle has no `fetch()` or `XMLHttpRequest` outside source maps.
+The only extension network boundary is the opt-in matching broker client.
+See [cloud matching setup and limits](docs/cloud-matching.md) and the [verification report](qa-results/jev-matching/README.md).

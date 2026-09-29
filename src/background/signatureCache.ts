@@ -10,6 +10,15 @@ import type {
 } from "../shared/types";
 
 const MAX_CACHE_ENTRIES = 500;
+let cacheWork: Promise<unknown> = Promise.resolve();
+
+// Frame matching and user corrections can overlap. Serialize read-modify-write
+// operations so a cache hit cannot overwrite a correction saved concurrently.
+function serializeCache<T>(operation: () => Promise<T>): Promise<T> {
+  const result = cacheWork.then(operation);
+  cacheWork = result.catch(() => undefined);
+  return result;
+}
 
 async function readCache(): Promise<CachedMapping[]> {
   const cache = (await getLocal<CachedMapping[]>(CACHE_KEY)) ?? [];
@@ -27,10 +36,29 @@ export async function discardLegacyCache(): Promise<void> {
   await chrome.storage.local.remove(CACHE_KEY_V1);
 }
 
+// Old local-only corrections lack a profile/context fingerprint. Bind them once
+// on adoption, so later role/index edits cannot resurrect an obsolete correction.
+export async function getLegacyManualMappings(
+  signature: string, fields: FieldDescriptor[], assistedContext: string
+): Promise<MappingCandidate[]> {
+  return serializeCache(async () => {
+    const cache = await readCache();
+    const entry = cache.find((item) => item.signature === signature);
+    if (!entry || (entry.assistedContext && entry.assistedContext !== assistedContext)) return [];
+    entry.assistedContext = assistedContext;
+    await writeCache(cache);
+    return (await readCachedMappings(signature, fields) ?? []).filter((candidate) => candidate.source === "manual");
+  });
+}
+
 export async function getCachedMappings(
   signature: string,
   fields: FieldDescriptor[]
 ): Promise<MappingCandidate[] | null> {
+  return serializeCache(() => readCachedMappings(signature, fields));
+}
+
+async function readCachedMappings(signature: string, fields: FieldDescriptor[]): Promise<MappingCandidate[] | null> {
   const cache = await readCache();
   const entry = cache.find((item) => item.signature === signature);
   if (!entry) return null;
@@ -46,6 +74,7 @@ export async function getCachedMappings(
           fieldId: field.id,
           profileKey: mapping.profileKey,
           transform: mapping.transform,
+          source: mapping.source,
           confidence: 1
         }
       : {
@@ -56,7 +85,7 @@ export async function getCachedMappings(
         };
   });
 
-  const mapped = mappings.filter((mapping) => mapping.profileKey !== "SKIP").length;
+  const mapped = mappings.filter((mapping) => mapping.profileKey !== "SKIP" || mapping.source === "manual").length;
   if (entry.mappings.length > 0 && mapped / entry.mappings.length < 0.7) return null;
 
   entry.hitCount += 1;
@@ -72,7 +101,7 @@ function mappingsFromCorrections(
   verifiedAt?: number
 ): CachedMapping["mappings"] {
   return corrections
-    .filter((correction) => correction.profileKey !== "SKIP")
+    .filter((correction) => source === "manual" || correction.profileKey !== "SKIP")
     .map((correction) => {
       const field = fields.find((candidate) => candidate.id === correction.fieldId);
       if (!field) return null;
@@ -95,35 +124,39 @@ export async function saveMappings(
   source: "verified-auto" | "manual" = "manual",
   verifiedAt?: number
 ): Promise<void> {
-  const now = Date.now();
-  const cache = await readCache();
-  const current = cache.find((entry) => entry.signature === signature);
-  const mappings = mappingsFromCorrections(fields, corrections, source, verifiedAt);
+  return serializeCache(async () => {
+    const now = Date.now();
+    const cache = await readCache();
+    const current = cache.find((entry) => entry.signature === signature);
+    const mappings = mappingsFromCorrections(fields, corrections, source, verifiedAt);
 
-  if (current) {
-    const nextByKey = new Map(
-      current.mappings.map((mapping) => [
-        `${mapping.fieldKey}:${mapping.occurrence ?? 0}`,
-        mapping
-      ])
-    );
-    mappings.forEach((mapping) =>
-      nextByKey.set(`${mapping.fieldKey}:${mapping.occurrence ?? 0}`, mapping)
-    );
-    current.mappings = [...nextByKey.values()];
-    current.lastUsed = now;
-    current.hitCount += 1;
-  } else {
-    cache.push({
-      version: 2,
-      signature,
-      mappings,
-      hitCount: 1,
-      lastUsed: now,
-      createdAt: now
-    });
-  }
-  await writeCache(cache);
+    if (current) {
+      const nextByKey = new Map(
+        current.mappings.map((mapping) => [
+          `${mapping.fieldKey}:${mapping.occurrence ?? 0}`,
+          mapping
+        ])
+      );
+      mappings.forEach((mapping) => {
+        const key = `${mapping.fieldKey}:${mapping.occurrence ?? 0}`;
+        if (source === "verified-auto" && nextByKey.get(key)?.source === "manual") return;
+        nextByKey.set(key, mapping);
+      });
+      current.mappings = [...nextByKey.values()];
+      current.lastUsed = now;
+      current.hitCount += 1;
+    } else {
+      cache.push({
+        version: 2,
+        signature,
+        mappings,
+        hitCount: 1,
+        lastUsed: now,
+        createdAt: now
+      });
+    }
+    await writeCache(cache);
+  });
 }
 
 export async function saveVerifiedMappings(

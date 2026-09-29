@@ -12,11 +12,13 @@ export const SESSION_PASSPHRASE_KEY = "profilePassphrase";
 export interface Settings {
   encryptionEnabled: boolean;
   simulateTyping: boolean;
+  cloudMatchingEnabled?: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   encryptionEnabled: false,
-  simulateTyping: false
+  simulateTyping: false,
+  cloudMatchingEnabled: false
 };
 
 export async function getLocal<T>(key: string): Promise<T | undefined> {

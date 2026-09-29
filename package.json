@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "broker": "node --experimental-strip-types server/matchingBroker.ts",
     "dev": "wxt",
     "qa:fixtures": "node scripts/serve-fixtures.mjs",
     "build": "wxt build",
@@ -12,7 +13,7 @@
     "zip": "wxt zip",
     "compile": "wxt prepare && tsc --noEmit",
     "test": "vitest run",
-    "test:browser:fixtures": "pnpm build:qa && playwright test -c playwright.config.ts tests/browser/extensionFlows.spec.ts tests/browser/complexControls.spec.ts",
+    "test:browser:fixtures": "pnpm build:qa && playwright test -c playwright.config.ts tests/browser/extensionFlows.spec.ts tests/browser/complexControls.spec.ts tests/browser/cloudMatching.spec.ts",
     "test:watch": "vitest",
     "verify": "pnpm compile && pnpm test && pnpm build"
   },

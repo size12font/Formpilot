@@ -19,7 +19,8 @@ import {
 } from "./requestStore";
 import { parseMessage, requestFillResponse } from "../shared/messages";
 import { sha256Hex } from "../shared/signature";
-import { getProfile } from "../shared/storage";
+import { getProfile, getSettings } from "../shared/storage";
+import { isLatestRequest, markLatestRequest, matchingContext } from "./matchingFreshness";
 import type {
   FillPlan,
   FillPlanEntry,
@@ -44,7 +45,7 @@ async function aggregatePlan(
   profile: NonNullable<Awaited<ReturnType<typeof getProfile>>>,
   preferredDocumentId?: string
 ): Promise<FillPlan> {
-  const screenshot = await captureViewport(tab);
+  const screenshot = (await getSettings()).cloudMatchingEnabled ? null : await captureViewport(tab);
   const plans = await Promise.all(
     extractions.map((extraction) =>
       createFillPlan({
@@ -119,6 +120,8 @@ async function handleFillRequest(
   }
 
   const id = requestId();
+  const settings = await getSettings();
+  if (settings.cloudMatchingEnabled) await markLatestRequest(targetTab.id, id);
   let extractions: FrameExtraction[];
   try {
     extractions = await extractAllFrames(targetTab.id, id);
@@ -170,14 +173,23 @@ async function handleFillRequest(
     });
   }
 
+  const context = settings.cloudMatchingEnabled ? await matchingContext(extractions, profile, settings) : undefined;
   const plan = await aggregatePlan(extractions, targetTab, profile, preferredDocumentId);
+  if (context) {
+    const fresh = await extractAllFrames(targetTab.id, id);
+    if (!await isLatestRequest(targetTab.id, id) ||
+      context !== await matchingContext(fresh, await getProfile(), await getSettings())) {
+      return requestFillResponse(false, "The form or profile changed. Open a new preview.");
+    }
+  }
   await saveActiveRequest(
     createRequestRecord({
       requestId: id,
       tabId: targetTab.id,
       topDocumentId: top.frame.documentId,
       fields,
-      plan
+      plan,
+      ...(context ? { matchingContext: context } : {})
     })
   );
   await sendToDocument(targetTab.id, top.frame.documentId, {
@@ -249,6 +261,16 @@ async function executeRequest(
   const request = await getActiveRequest(id);
   const profile = await getProfile();
   if (!request || !profile) return [];
+  if (request.matchingContext) {
+    const fresh = await extractAllFrames(request.tabId, id);
+    if (!await isLatestRequest(request.tabId, id) ||
+      request.matchingContext !== await matchingContext(fresh, profile, await getSettings())) {
+      return selections.filter((selection) => selection.enabled).map((selection) => ({
+        fieldId: selection.fieldId, status: "blocked", expected: "", actual: "",
+        message: "The form or profile changed. Open a new preview."
+      }));
+    }
+  }
   const entries = canonicalEntries(request, selections, profile);
   const byDocument = new Map<string, FillPlanEntry[]>();
   entries.forEach((entry) => {
@@ -291,6 +313,7 @@ async function saveCorrections(id: string, corrections: MappingCorrection[]): Pr
   const request = await getActiveRequest(id);
   const profile = await getProfile();
   if (!request || !profile) return;
+  if (request.matchingContext) await markLatestRequest(request.tabId, id);
   for (const correction of corrections) {
     const field = request.fields.find((candidate) => candidate.id === correction.fieldId);
     const stored = request.plan.entries.find((entry) => entry.fieldId === correction.fieldId);
@@ -299,7 +322,7 @@ async function saveCorrections(id: string, corrections: MappingCorrection[]): Pr
     // A correction is cacheable only when the same safety/mapping gate would
     // make it actionable now. Low-confidence, unsupported, and invalid
     // corrections stay current-request-only and must never poison cache v2.
-    if (recomputed.status !== "ready") continue;
+    if (recomputed.status !== "ready" && correction.profileKey !== "SKIP") continue;
     await saveMappings(stored.signature, [field], [correction], "manual");
   }
 }
@@ -311,6 +334,7 @@ async function recomputeRequestEntry(
   const request = await getActiveRequest(id);
   const profile = await getProfile();
   if (!request || !profile) return null;
+  if (request.matchingContext) await markLatestRequest(request.tabId, id);
   const field = request.fields.find((candidate) => candidate.id === correction.fieldId);
   const stored = request.plan.entries.find((entry) => entry.fieldId === correction.fieldId);
   if (!field || !stored) return null;

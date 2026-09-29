@@ -37,7 +37,7 @@ describe("cache v2", () => {
     data.clear();
     chrome.storage.local.get = vi.fn(async (key: string | string[]) => {
       const keys = Array.isArray(key) ? key : [key];
-      return Object.fromEntries(keys.map((item) => [item, data.get(item)]));
+      return structuredClone(Object.fromEntries(keys.map((item) => [item, data.get(item)])));
     }) as unknown as typeof chrome.storage.local.get;
     chrome.storage.local.set = vi.fn(async (items: Record<string, unknown>) => {
       Object.entries(items).forEach(([key, value]) => data.set(key, value));
@@ -70,6 +70,18 @@ describe("cache v2", () => {
     expect(mappings?.map((item) => item.profileKey)).toEqual([
       "contact.emails[0].value",
       "custom.department"
+    ]);
+  });
+
+  it("preserves concurrent corrections and cache reads from different frames", async () => {
+    const second = { ...field, id: "email-2", occurrence: 1 };
+    await Promise.all([
+      saveMappings("signature", [field], [{ fieldId: "email", profileKey: "contact.emails[0].value", transform: "none" }]),
+      saveMappings("signature", [second], [{ fieldId: "email-2", profileKey: "contact.emails[1].value", transform: "none" }]),
+      getCachedMappings("signature", [field, second])
+    ]);
+    expect((await getCachedMappings("signature", [field, second]))?.map((item) => item.profileKey)).toEqual([
+      "contact.emails[0].value", "contact.emails[1].value"
     ]);
   });
 });

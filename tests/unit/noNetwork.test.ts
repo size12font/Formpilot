@@ -11,11 +11,11 @@ function files(dir: string): string[] {
 }
 
 describe("runtime network guard", () => {
-  it("does not use fetch or XMLHttpRequest in src", () => {
+  it("keeps network calls inside the opt-in broker client", () => {
     const offenders = files(join(process.cwd(), "src")).filter((path) => {
       const text = readFileSync(path, "utf8");
       return /\bfetch\s*\(|\bXMLHttpRequest\b/.test(text);
     });
-    expect(offenders).toEqual([]);
+    expect(offenders).toEqual([join(process.cwd(), "src/background/cloudClient.ts")]);
   });
 });

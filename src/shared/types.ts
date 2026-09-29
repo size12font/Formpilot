@@ -207,6 +207,7 @@ export interface FillPlan {
 }
 
 export interface ActiveFillRequest {
+  matchingContext?: string;
   version: 1;
   requestId: string;
   tabId: number;
@@ -250,6 +251,7 @@ export interface MappingCorrection {
 }
 
 export interface CachedMapping {
+  assistedContext?: string;
   version?: 2 | undefined;
   signature: string;
   formKey?: string | undefined;
@@ -310,6 +312,7 @@ export interface FillDiagnostics {
 }
 
 export interface MappingCandidate {
+  source?: "manual" | "verified-auto" | undefined;
   fieldId: string;
   profileKey: string;
   transform: TransformName;

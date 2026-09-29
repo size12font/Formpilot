@@ -6,6 +6,7 @@ import type { FillPlan, FillPlanEntry, MappingCorrection, VerifyResult } from ".
 interface OverlayProps {
   plan: FillPlan;
   profileKeys: string[];
+  profileLabels?: Record<string, string>;
   onCancel: () => void;
   onFill: (entries: FillPlanEntry[]) => Promise<VerifyResult[]>;
   onSave: (corrections: MappingCorrection[]) => Promise<void>;
@@ -86,6 +87,11 @@ function Overlay(props: OverlayProps) {
     );
   };
 
+  const notifyEdited = (row: RowState, value = row.value) => {
+    // Editing this preview supersedes any newer inference still in flight.
+    void props.onCorrect?.({ fieldId: row.fieldId, profileKey: row.profileKey, transform: row.transform, valueOverride: value });
+  };
+
   const fill = async () => {
     setBusy(true);
     const selected = visibleRows.filter((row) => row.enabled && row.status === "ready");
@@ -115,7 +121,7 @@ function Overlay(props: OverlayProps) {
       <header class="fp-header">
         <div>
           <h2>FormPilot</h2>
-          <p>{props.plan.visionUsed ? "Vision + DOM" : "DOM mapping"}</p>
+          <p>Review before filling</p>
         </div>
         <button class="fp-icon" type="button" onClick={props.onCancel} aria-label="Close">
           x
@@ -160,11 +166,12 @@ function Overlay(props: OverlayProps) {
                   type="checkbox"
                   checked={row.enabled}
                   disabled={disabled}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     updateRow(row.fieldId, {
                       enabled: (event.currentTarget as HTMLInputElement).checked
-                    })
-                  }
+                    });
+                    notifyEdited(row);
+                  }}
                 />
                 <span>{row.label || row.fieldId}</span>
               </label>
@@ -172,11 +179,12 @@ function Overlay(props: OverlayProps) {
                 class="fp-value"
                 value={row.value}
                 disabled={locked || row.status !== "ready"}
-                onInput={(event) =>
+                onInput={(event) => {
                   updateRow(row.fieldId, {
                     value: (event.currentTarget as HTMLInputElement).value
-                  })
-                }
+                  });
+                  notifyEdited(row, event.currentTarget.value);
+                }}
               />
               <div class="fp-meta">
                 <select
@@ -189,10 +197,10 @@ function Overlay(props: OverlayProps) {
                     );
                   }}
                 >
-                  <option value="SKIP">SKIP</option>
+                  <option value="SKIP">Leave blank</option>
                   {props.profileKeys.map((key) => (
                     <option value={key} key={key}>
-                      {key}
+                      {props.profileLabels?.[key] ?? key}
                     </option>
                   ))}
                 </select>

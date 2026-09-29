@@ -2,6 +2,7 @@
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
     "strict": true,
+    "allowImportingTsExtensions": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -16,6 +17,7 @@
   },
   "include": [
     "src",
+    "server",
     "entrypoints",
     "tests",
     "playwright.config.ts",

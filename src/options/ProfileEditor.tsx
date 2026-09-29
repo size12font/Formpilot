@@ -9,6 +9,7 @@ import {
   type Settings
 } from "../shared/storage";
 import type { Profile } from "../shared/types";
+import { CloudMatchingSettings } from "./CloudMatchingSettings";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -83,7 +84,7 @@ export function ProfileEditor() {
       ...current,
       contact: {
         ...current.contact,
-        emails: [{ ...email, value }]
+        emails: [{ ...email, value }, ...current.contact.emails.slice(1)]
       }
     }));
   };
@@ -93,7 +94,7 @@ export function ProfileEditor() {
       ...current,
       contact: {
         ...current.contact,
-        phones: [{ ...phone, ...patch }]
+        phones: [{ ...phone, ...patch }, ...current.contact.phones.slice(1)]
       }
     }));
   };
@@ -101,7 +102,7 @@ export function ProfileEditor() {
   const updateAddress = (patch: Partial<typeof address>) => {
     setProfile((current) => ({
       ...current,
-      addresses: [{ ...address, ...patch }]
+      addresses: [{ ...address, ...patch }, ...current.addresses.slice(1)]
     }));
   };
 
@@ -292,6 +293,8 @@ export function ProfileEditor() {
 
       <section>
         <h2>Settings</h2>
+        <CloudMatchingSettings enabled={settings.cloudMatchingEnabled === true}
+          onChange={(enabled) => setSettings({ ...settings, cloudMatchingEnabled: enabled })} />
         <div class="checks">
           <label>
             <input

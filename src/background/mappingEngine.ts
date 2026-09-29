@@ -1,8 +1,12 @@
-import { getCachedMappings } from "./signatureCache";
+import { getCachedMappings, getLegacyManualMappings } from "./signatureCache";
 import { mapFieldsWithPromptApi } from "./promptClient";
+import { requestCloudMatches } from "./cloudClient";
+import { cloudField, cloudProfileCandidates, permittedCandidates } from "./cloudCandidates";
+import { MATCHING_RULES_VERSION, MAX_MATCH_FIELDS, MIN_CHOICE_CONFIDENCE } from "../shared/cloudProtocol";
+import { getSettings } from "../shared/storage";
 import { flattenProfile } from "../shared/profile";
 import { entryStatusForSafety, safetyDecision } from "../shared/safety";
-import { formSignature } from "../shared/signature";
+import { formSignature, sha256Hex } from "../shared/signature";
 import { transformProfileValue } from "../shared/transforms";
 import type {
   FieldDescriptor,
@@ -130,6 +134,7 @@ function refinePhoneCandidates(
 
     const firstRunItem = run[0]!;
     const phoneIndex = profileIndex(firstRunItem.candidate.profileKey, "contact\\.phones") ?? 0;
+    if (run.some((item) => profileIndex(item.candidate.profileKey, "contact\\.phones") !== phoneIndex)) continue;
     const numberKey = keyForIndexedField(keys, "contact.phones", phoneIndex, "number");
     const countryCodeKey = keyForIndexedField(keys, "contact.phones", phoneIndex, "countryCode");
     if (!numberKey) continue;
@@ -600,11 +605,24 @@ export async function createFillPlan(options: {
   pageLang: string;
   pageTitle: string;
   screenshot?: Blob;
+  signal?: AbortSignal;
 }): Promise<FillPlan> {
-  const signature = await formSignature(options.url, options.fields);
+  const baseSignature = await formSignature(options.url, options.fields);
+  const assisted = (await getSettings()).cloudMatchingEnabled === true;
+  // This hash stays local. Include original context, roles, values, and rules so
+  // privacy projection collisions cannot make an old decision reusable.
+  const signature = assisted ? await sha256Hex(JSON.stringify([
+    baseSignature, MATCHING_RULES_VERSION, options.profile,
+    options.fields.map(({ bbox: _bbox, ...field }) => field), options.pageLang
+  ])) : baseSignature;
   const cachedCandidates = await getCachedMappings(signature, options.fields);
+  const manual = assisted && !cachedCandidates
+    ? await getLegacyManualMappings(baseSignature, options.fields, signature)
+    : undefined;
 
-  const promptResult = cachedCandidates
+  const promptResult = assisted
+    ? { candidates: await assistedCandidates(options.fields, options.profile, cachedCandidates ?? manual ?? [], options.signal), visionUsed: false }
+    : cachedCandidates
     ? { candidates: cachedCandidates, visionUsed: false }
     : await promptCandidates(
         options.fields,
@@ -625,7 +643,7 @@ export async function createFillPlan(options: {
       candidateForField(field, profileKeys)
     );
   });
-  const refinedCandidates = refineCandidates(options.fields, resolvedCandidates, profileKeys);
+  const refinedCandidates = assisted ? resolvedCandidates : refineCandidates(options.fields, resolvedCandidates, profileKeys);
 
   return {
     signature,
@@ -645,6 +663,78 @@ export async function createFillPlan(options: {
     })).values()],
     selectedFormKey: selectDefaultForm(options.fields)
   };
+}
+
+function localTransform(field: FieldDescriptor, profileKey: string): TransformName {
+  if (field.options) return "select:match-option";
+  if (profileKey === "identity.dateOfBirth") return dateTransform(field, fieldText(field));
+  if (profileKey.endsWith(".countryCode")) return "phone:split-country-code";
+  if (profileKey.startsWith("contact.phones[")) return field.type === "number" ? "phone:national-digits" : field.type === "tel" ? "phone:national" : "phone:e164";
+  if (profileKey.endsWith(".country")) return "country:iso2";
+  if (profileKey === "identity.givenName" && /\b(full name|nombre completo|nom complet|nome completo)\b/.test(fieldText(field))) return "name:full";
+  return "none";
+}
+
+export async function assistedCandidates(
+  fields: FieldDescriptor[], profile: Profile, cached: MappingCandidate[], signal?: AbortSignal
+): Promise<MappingCandidate[]> {
+  const profileFields = flattenProfile(profile);
+  const keys = profileFields.map((item) => item.key);
+  const available = cloudProfileCandidates(profile);
+  const privateValues = [...profileFields.map((item) => item.value), ...fields.map((field) => field.currentValue ?? "")];
+  const skip = (field: FieldDescriptor): MappingCandidate => ({ fieldId: field.id, profileKey: "SKIP", transform: "none", confidence: 0 });
+  const local = refineCandidates(fields, fields.map((field) => candidateForField(field, keys)), keys);
+  const unresolved: number[] = [];
+  const result = fields.map((field, index) => {
+    if (safetyDecision(field).action !== "allow") return skip(field);
+    const allowed = permittedCandidates(field, available);
+    const correction = cached.find((item) => item.fieldId === field.id && item.source === "manual");
+    // Explicit user choices outrank inference, but never safety or missing keys.
+    if (correction && (correction.profileKey === "SKIP" || keys.includes(correction.profileKey)) &&
+      safetyDecision(field, correction.profileKey).action === "allow") return correction;
+    const candidate = cached.find((item) => item.fieldId === field.id && item.profileKey !== "SKIP") ?? local[index]!;
+    const visibleCandidate = candidateForField({ ...field, autocomplete: undefined }, keys);
+    const unsupportedAutocomplete = Boolean(field.autocomplete) && visibleCandidate.profileKey !== candidate.profileKey;
+    const selected = allowed.find((item) => item.profileKey === candidate.profileKey);
+    const suffix = selected?.role.split(" ").slice(1).join(" ");
+    const hasCompetingRole = /^(addresses\[|contact\.)/.test(candidate.profileKey) &&
+      allowed.filter((item) => item.role.split(" ").slice(1).join(" ") === suffix).length > 1;
+    if (selected && !hasCompetingRole && !unsupportedAutocomplete && candidate.confidence >= 0.9) return candidate;
+    unresolved.push(index);
+    return skip(field);
+  });
+  const indexes: number[] = [];
+  const requests = unresolved.flatMap((index) => {
+    if (indexes.length >= MAX_MATCH_FIELDS) return [];
+    const description = cloudField(fields[index]!, `f${indexes.length}`, available, privateValues);
+    if (!description) return [];
+    indexes.push(index);
+    return [description];
+  });
+  if (!requests.length || signal?.aborted) return result;
+  const response = await requestCloudMatches({ version: MATCHING_RULES_VERSION, fields: requests }, signal);
+  if (!response || signal?.aborted) return result;
+  for (const selection of response.selections) {
+    const requestIndex = requests.findIndex((field) => field.id === selection.fieldId);
+    const index = indexes[requestIndex];
+    if (index === undefined || selection.candidateId === "NO_MATCH" || selection.confidence < MIN_CHOICE_CONFIDENCE) continue;
+    const field = fields[index]!;
+    const candidate = permittedCandidates(field, available).find((item) => item.id === selection.candidateId);
+    if (!candidate || !requests[requestIndex]!.candidates.some((item) => item.id === candidate.id)) continue;
+    result[index] = { fieldId: field.id, profileKey: candidate.profileKey, transform: localTransform(field, candidate.profileKey), confidence: selection.confidence };
+  }
+  // Scope phone splitting to each form and preserve manual corrections.
+  const refined = [...result];
+  const scopes = new Set(fields.map((field) => `${field.ref?.documentId ?? field.frameId}:${field.formKey ?? "document"}`));
+  for (const scope of scopes) {
+    const indexes = fields.flatMap((field, index) => `${field.ref?.documentId ?? field.frameId}:${field.formKey ?? "document"}` === scope ? [index] : []);
+    const parts = refinePhoneCandidates(indexes.map((index) => fields[index]!), indexes.map((index) => result[index]!), keys);
+    indexes.forEach((index, offset) => {
+      const candidate = parts[offset]!;
+      if (result[index]!.source !== "manual" && permittedCandidates(fields[index]!, available).some((item) => item.profileKey === candidate.profileKey)) refined[index] = candidate;
+    });
+  }
+  return refined;
 }
 
 function selectDefaultForm(fields: FieldDescriptor[]): string {
