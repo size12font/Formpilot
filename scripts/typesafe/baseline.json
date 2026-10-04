@@ -1,0 +1,149 @@
+{
+  "rows": [
+    {
+      "id": "field-0",
+      "choice": "identity.givenName",
+      "status": "ready",
+      "latencyMs": 5.540792000000238
+    },
+    {
+      "id": "field-1",
+      "choice": "identity.givenName",
+      "status": "ready",
+      "latencyMs": 0.6741250000000036
+    },
+    {
+      "id": "field-2",
+      "choice": "identity.givenName",
+      "status": "ready",
+      "latencyMs": 0.4341250000002219
+    },
+    {
+      "id": "field-3",
+      "choice": "identity.familyName",
+      "status": "ready",
+      "latencyMs": 0.6102909999999611
+    },
+    {
+      "id": "field-4",
+      "choice": "identity.givenName",
+      "status": "ready",
+      "latencyMs": 0.9197079999999005
+    },
+    {
+      "id": "field-5",
+      "choice": "contact.emails[0].value",
+      "status": "ready",
+      "latencyMs": 0.4417920000000777
+    },
+    {
+      "id": "field-6",
+      "choice": "addresses[0].city",
+      "status": "ready",
+      "latencyMs": 1.0019579999998314
+    },
+    {
+      "id": "field-7",
+      "choice": "addresses[0].postalCode",
+      "status": "ready",
+      "latencyMs": 1.1794159999999465
+    },
+    {
+      "id": "field-8",
+      "choice": "work.company",
+      "status": "ready",
+      "latencyMs": 1.2532500000002074
+    },
+    {
+      "id": "field-9",
+      "choice": "work.jobTitle",
+      "status": "ready",
+      "latencyMs": 0.6053329999999733
+    },
+    {
+      "id": "field-10",
+      "choice": "addresses[0].country",
+      "status": "ready",
+      "latencyMs": 0.5424580000003516
+    },
+    {
+      "id": "field-11",
+      "choice": "addresses[0].street",
+      "status": "ready",
+      "latencyMs": 0.4268329999999878
+    },
+    {
+      "id": "field-12",
+      "choice": "SKIP",
+      "status": "skipped-sensitive",
+      "latencyMs": 0.6717920000000959
+    },
+    {
+      "id": "field-13",
+      "choice": "SKIP",
+      "status": "skipped-sensitive",
+      "latencyMs": 0.295708999999988
+    },
+    {
+      "id": "field-14",
+      "choice": "SKIP",
+      "status": "skipped-sensitive",
+      "latencyMs": 0.17812499999990905
+    },
+    {
+      "id": "field-15",
+      "choice": "SKIP",
+      "status": "skipped-sensitive",
+      "latencyMs": 0.28170799999998053
+    },
+    {
+      "id": "field-16",
+      "choice": "SKIP",
+      "status": "low-confidence",
+      "latencyMs": 0.643833000000086
+    },
+    {
+      "id": "field-17",
+      "choice": "SKIP",
+      "status": "low-confidence",
+      "latencyMs": 0.3046669999998812
+    },
+    {
+      "id": "field-18",
+      "choice": "SKIP",
+      "status": "low-confidence",
+      "latencyMs": 0.1516660000002048
+    },
+    {
+      "id": "field-19",
+      "choice": "SKIP",
+      "status": "low-confidence",
+      "latencyMs": 0.15895799999998417
+    },
+    {
+      "id": "field-20",
+      "choice": "identity.givenName",
+      "status": "ready",
+      "latencyMs": 0.8162089999996169
+    },
+    {
+      "id": "field-21",
+      "choice": "identity.familyName",
+      "status": "ready",
+      "latencyMs": 0.6151249999998072
+    },
+    {
+      "id": "field-22",
+      "choice": "contact.emails[0].value",
+      "status": "ready",
+      "latencyMs": 0.6735830000002352
+    },
+    {
+      "id": "field-23",
+      "choice": "SKIP",
+      "status": "skipped-sensitive",
+      "latencyMs": 0.2667500000002292
+    }
+  ],
+  "method": "Existing createFillPlan, synthetic profile, browser Prompt API unavailable in test environment. Measures local fallback, not on-device Gemini."
+}
