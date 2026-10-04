@@ -4,6 +4,8 @@ Development-only synthetic metadata comparison against createFillPlan. Browser P
 
 ## Evaluation
 
+Ordinary test runs preserve the recorded baseline. To export a new local measurement, run `TYPESAFE_BASELINE_OUTPUT=scripts/typesafe/baseline.json pnpm exec vitest run tests/unit/typesafeBaseline.test.ts`.
+
 Fixtures and expected labels were saved before inference. Calibration and holdout cases are distinct synthetic examples. These results do not establish precision on live users.
 
 ```json

@@ -19,5 +19,7 @@ test('export the actual local mapper baseline without a cloud model',async()=>{
   rows.push({id:f.id,choice:entry.status!=='ready'||!entry.profileKey?'SKIP':entry.profileKey,status:entry.status,latencyMs:performance.now()-start});
   expect(plan.visionUsed).toBe(false);
  }
- writeFileSync('scripts/typesafe/baseline.json',JSON.stringify({rows,method:'Existing createFillPlan, synthetic profile, browser Prompt API unavailable in test environment. Measures local fallback, not on-device Gemini.'},null,2));
+ if (process.env.TYPESAFE_BASELINE_OUTPUT) {
+  writeFileSync(process.env.TYPESAFE_BASELINE_OUTPUT,JSON.stringify({rows,method:'Existing createFillPlan, synthetic profile, browser Prompt API unavailable in test environment. Measures local fallback, not on-device Gemini.'},null,2));
+ }
 });
